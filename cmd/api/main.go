@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/mhaatha/HIMA-TI-e-Election/config"
@@ -109,8 +110,13 @@ func main() {
 
 	go voteController.ListenToDB(context.Background())
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	server := http.Server{
-		Addr:    ":5410",
+		Addr:    ":" + port,
 		Handler: middleware.CORSMiddleware(middleware.LoggingMiddleware(router)),
 	}
 
