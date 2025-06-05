@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS users, voting_access, sessions;
