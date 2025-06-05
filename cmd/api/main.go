@@ -110,7 +110,7 @@ func main() {
 	go voteController.ListenToDB(context.Background())
 
 	server := http.Server{
-		Addr:    "138.2.103.58:5410",
+		Addr:    ":5410",
 		Handler: middleware.CORSMiddleware(middleware.LoggingMiddleware(router)),
 	}
 
