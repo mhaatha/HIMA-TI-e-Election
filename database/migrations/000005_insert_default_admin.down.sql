@@ -1,1 +1,0 @@
-DELETE FROM users WHERE full_name = 'Admin' AND role = 'admin';
