@@ -101,6 +101,15 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 
 	file, err := os.Open(logFilePath)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return web.PresignedURLResponse{}, myErrors.NewAppError(
+				http.StatusNotFound,
+				"Log file is not found",
+				fmt.Sprintf("Log file from year %v is not found", fileName),
+				fmt.Errorf("log file not found: %v", err),
+			)
+		}
+
 		return web.PresignedURLResponse{}, myErrors.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
