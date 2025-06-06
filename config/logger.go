@@ -28,6 +28,8 @@ func InitLogger() {
 		},
 	})
 
+	Log.SetOutput(os.Stderr)
+
 	// Log for file
 	filePath, err := GetLogFilePath()
 	if err != nil {
