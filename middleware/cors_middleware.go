@@ -7,8 +7,8 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		origin := r.Header.Get("Origin")
 
 		allowedOrigins := map[string]bool{
-			"http://localhost:5500": true,
-			"http://127.0.0.1:5500": true,
+			"https://himati-e-election-polnes.vercel.app":                         true,
+			"https://himati-e-election-polnes-alvin2005-gits-projects.vercel.app": true,
 		}
 
 		if allowedOrigins[origin] {
