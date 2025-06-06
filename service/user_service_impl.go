@@ -789,7 +789,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 	for _, user := range willBeSendToWhatsApp {
 		payload := map[string]string{
 			"target":  user.PhoneNumber,
-			"message": fmt.Sprintf("Halo *%s*, ini adalah password Voting Anda: *%s*\nGunakan password ini untuk login dan berikan suara terbaikmu!\nTerima kasih atas partisipasinya.", user.FullName, user.Password),
+			"message": fmt.Sprintf("Halo *%s*, ini adalah password Voting Anda: *%s*\nGunakan password ini untuk login dan berikan suara terbaikmu!\nTerima kasih atas partisipasinya.\n\nVote di sini: https://himati-e-election-polnes.vercel.app", user.FullName, user.Password),
 		}
 
 		// Convert the user data to JSON
