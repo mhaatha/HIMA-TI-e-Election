@@ -3063,7 +3063,7 @@
                             }
                         }
                     },
-                    "403": {
+                    "400": {
                         "description": "Bad Request",
                         "content": {
                             "application/json": {
