@@ -19,10 +19,11 @@ import (
 	"github.com/mhaatha/HIMA-TI-e-Election/repository"
 )
 
-func NewVoteService(voteRepository repository.VoteRepository, votingAccessRepository repository.VotingAccessRepository, userService UserService, db *pgxpool.Pool, validate *validator.Validate) VoteService {
+func NewVoteService(voteRepository repository.VoteRepository, votingAccessRepository repository.VotingAccessRepository, authRepository repository.AuthRepository, userService UserService, db *pgxpool.Pool, validate *validator.Validate) VoteService {
 	return &VoteServiceImpl{
 		VoteRepository:         voteRepository,
 		VotingAccessRepository: votingAccessRepository,
+		AuthRepository:         authRepository,
 		UserService:            userService,
 		DB:                     db,
 		Validate:               validate,
@@ -33,6 +34,7 @@ type VoteServiceImpl struct {
 	VoteRepository         repository.VoteRepository
 	CandidateService       CandidateService
 	VotingAccessRepository repository.VotingAccessRepository
+	AuthRepository         repository.AuthRepository
 	UserService            UserService
 	DB                     *pgxpool.Pool
 	Validate               *validator.Validate
@@ -251,4 +253,63 @@ func (service *VoteServiceImpl) StreamVoteEvents(ctx context.Context, conn *webs
 			}
 		}
 	}
+}
+
+func (service *VoteServiceImpl) CheckIfUserHasVoted(ctx context.Context, sessionId string) (bool, error) {
+	// Open Transaction
+	tx, err := service.DB.Begin(ctx)
+	if err != nil {
+		return false, myErrors.NewAppError(
+			http.StatusInternalServerError,
+			"Internal Server Error",
+			"Failed to process your request due to an unexpected error. Please try again later.",
+			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+		)
+	}
+	defer helper.CommitOrRollback(ctx, tx)
+
+	// Check if sessionId is not from admin
+	// Get session by sessionId
+	session, err := service.AuthRepository.GetSessionById(ctx, tx, sessionId)
+	if err != nil {
+		return false, myErrors.NewAppError(
+			http.StatusInternalServerError,
+			"Internal Server Error",
+			"Failed to process your request due to an unexpected error. Please try again later.",
+			fmt.Errorf("failed to get session by sessionId: %v", err),
+		)
+	}
+
+	// Get user by userId
+	user, err := service.UserService.GetById(ctx, session.UserId)
+	if err != nil {
+		return false, myErrors.NewAppError(
+			http.StatusInternalServerError,
+			"Internal Server Error",
+			"Failed to process your request due to an unexpected error. Please try again later.",
+			fmt.Errorf("failed to get user by userId: %v", err),
+		)
+	}
+
+	if user.Role == "admin" {
+		return false, myErrors.NewAppError(
+			http.StatusBadRequest,
+			"Admin cannot vote",
+			"Admin does not have permission to vote",
+			fmt.Errorf("%s is an admin, cannot vote", user.FullName),
+		)
+	}
+
+	// Check is user already voted in this period
+	isVoted, err := service.VoteRepository.IsUserEverVoted(ctx, tx, session.UserId)
+	if err != nil {
+		return false, myErrors.NewAppError(
+			http.StatusInternalServerError,
+			"Internal Server Error",
+			"Failed to process your request due to an unexpected error. Please try again later.",
+			fmt.Errorf("failed to check if user has ever voted: %v", err),
+		)
+	}
+
+	return isVoted, nil
 }

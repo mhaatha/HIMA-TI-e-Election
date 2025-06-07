@@ -15,4 +15,5 @@ type VoteService interface {
 	SaveVoteRecord(ctx context.Context, request web.VoteCreateRequest, userId int) (web.VoteCreateResponse, error)
 	GetTotalVotesByCandidateId(ctx context.Context, candidateId int) (web.TotalVoteResponse, error)
 	StreamVoteEvents(ctx context.Context, conn *websocket.Conn)
+	CheckIfUserHasVoted(ctx context.Context, sessionId string) (bool, error)
 }

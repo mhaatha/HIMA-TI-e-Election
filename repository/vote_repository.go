@@ -12,4 +12,5 @@ type VoteRepository interface {
 	IsUserVotedInPeriod(ctx context.Context, tx pgx.Tx, hashedNIM string) (bool, error)
 	SaveVoteRecord(ctx context.Context, tx pgx.Tx, vote domain.Vote) (domain.Vote, error)
 	GetTotalVotesByCandidateId(ctx context.Context, tx pgx.Tx, candidateId int) (int, error)
+	IsUserEverVoted(ctx context.Context, tx pgx.Tx, userId int) (bool, error)
 }

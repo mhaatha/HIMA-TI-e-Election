@@ -221,3 +221,57 @@ func (controller *VoteControllerImpl) ListenToDB(ctx context.Context) {
 		broadcast <- notif.Payload
 	}
 }
+
+func (controller *VoteControllerImpl) CheckIfUserHasVoted(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+	// Get cookie from context
+	cookie, ok := r.Context().Value(middleware.SessionContextKey).(web.SessionResponse)
+	if !ok {
+		myErrors.LogError(nil, "invalid session data")
+
+		w.WriteHeader(http.StatusUnauthorized)
+		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
+			"error": {
+				Message: "Invalid session data",
+				Details: "Session data may be corrupted or missing",
+			},
+		})
+		return
+	}
+
+	// Call service
+	isVoted, err := controller.VoteService.CheckIfUserHasVoted(r.Context(), cookie.SessionId)
+	if err != nil {
+		var customError *myErrors.AppError
+
+		if errors.As(err, &customError) {
+			myErrors.LogError(err, "failed to check if user has voted")
+
+			w.WriteHeader(customError.StatusCode)
+			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
+				"error": {
+					Message: customError.Message,
+					Details: customError.Details,
+				},
+			})
+			return
+		} else {
+			myErrors.LogError(err, "unexpected error")
+
+			w.WriteHeader(http.StatusInternalServerError)
+			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
+				"error": {
+					Message: "Internal Server Error",
+					Details: "Internal Server Error. Please try again later.",
+				},
+			})
+			return
+		}
+	}
+
+	// Write and send the response
+	w.WriteHeader(http.StatusOK)
+	helper.WriteToResponseBody(w, web.WebSuccessResponse{
+		Message: "Success check if user has voted",
+		Data:    map[string]bool{"has_voted": isVoted},
+	})
+}

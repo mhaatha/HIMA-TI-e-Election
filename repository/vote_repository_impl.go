@@ -100,3 +100,24 @@ func (repository *VoteRepositoryImpl) GetTotalVotesByCandidateId(ctx context.Con
 
 	return total, nil
 }
+
+func (repository *VoteRepositoryImpl) IsUserEverVoted(ctx context.Context, tx pgx.Tx, userId int) (bool, error) {
+	SQL := `
+	SELECT EXISTS (
+		SELECT 1
+		FROM votes v
+		JOIN voting_access va ON v.hashed_nim = va.hashed
+		WHERE va.user_id = $1
+			AND EXTRACT(YEAR FROM v.created_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+	) AS has_voted
+	`
+
+	var hasVoted bool
+
+	err := tx.QueryRow(ctx, SQL, userId).Scan(&hasVoted)
+	if err != nil {
+		return false, err
+	}
+
+	return hasVoted, nil
+}
