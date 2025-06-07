@@ -107,7 +107,7 @@ func main() {
 	router.POST("/api/votes", middleware.UserMiddleware(voteController.Save, authService))
 	router.GET("/api/votes/:candidateId", middleware.AdminMiddleware(voteController.GetTotalVotesByCandidateId, authService))
 	router.GET("/ws/votes", middleware.AdminMiddleware(voteController.VotesLiveResult, authService))
-	router.GET("/api/votes/user/check", middleware.UserMiddleware(voteController.CheckIfUserHasVoted, authService))
+	router.GET("/api/user/vote-status", middleware.UserMiddleware(voteController.CheckIfUserHasVoted, authService))
 
 	go voteController.ListenToDB(context.Background())
 

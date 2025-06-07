@@ -3027,7 +3027,7 @@
                 }
             }
         },
-        "/api/votes/user/check": {
+        "/api/user/vote-status": {
             "get": {
                 "tags": [
                     "Vote API"
