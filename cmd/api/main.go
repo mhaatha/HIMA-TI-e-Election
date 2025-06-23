@@ -16,6 +16,9 @@ import (
 )
 
 func main() {
+	// Set TimeZone
+	os.Setenv("TZ", "Asia/Makassar")
+
 	// Validator Init
 	config.ValidatorInit()
 

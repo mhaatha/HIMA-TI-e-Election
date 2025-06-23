@@ -24,7 +24,7 @@ var (
 	broadcast      = make(chan string)
 	mutex          sync.Mutex
 	feFirstDomain  = "http://localhost:5500"
-	feSecondDomain = "http://127.0.0.1:5500"
+	feSecondDomain = "https://himati-e-election-polnes.vercel.app"
 )
 
 var upgrader = websocket.Upgrader{
