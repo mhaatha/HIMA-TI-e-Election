@@ -10,9 +10,6 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			"https://himati-e-election-polnes.vercel.app":                         true,
 			"https://himati-e-election-polnes-alvin2005-gits-projects.vercel.app": true,
 			"https://m-hafidz-athaya-e-election.vercel.app":                       true,
-			"http://localhost:5500":                                               true,
-			"http://127.0.0.1:5500":                                               true,
-			"*":                                                                   true,
 		}
 
 		if allowedOrigins[origin] {
