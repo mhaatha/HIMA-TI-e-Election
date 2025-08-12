@@ -9,6 +9,10 @@ func CORSMiddleware(next http.Handler) http.Handler {
 		allowedOrigins := map[string]bool{
 			"https://himati-e-election-polnes.vercel.app":                         true,
 			"https://himati-e-election-polnes-alvin2005-gits-projects.vercel.app": true,
+			"https://m-hafidz-athaya-vercel.app": true,
+			"127.0.0.1": true,
+			"localhost": true,
+			"127.0.0.1:5500": true,
 		}
 
 		if allowedOrigins[origin] {
