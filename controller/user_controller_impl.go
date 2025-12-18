@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/middleware"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
@@ -39,10 +39,10 @@ func (controller *UserControllerImpl) Create(w http.ResponseWriter, r *http.Requ
 	// Call service
 	userResponse, err := controller.UserService.Create(r.Context(), userRequest)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to create user")
+			appError.LogError(err, "failed to create user")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -53,7 +53,7 @@ func (controller *UserControllerImpl) Create(w http.ResponseWriter, r *http.Requ
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -78,7 +78,7 @@ func (controller *UserControllerImpl) UpdateCurrent(w http.ResponseWriter, r *ht
 	// Get cookie from context
 	cookie, ok := r.Context().Value(middleware.SessionContextKey).(web.SessionResponse)
 	if !ok {
-		myErrors.LogError(nil, "invalid session data")
+		appError.LogError(nil, "invalid session data")
 
 		w.WriteHeader(http.StatusUnauthorized)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -101,10 +101,10 @@ func (controller *UserControllerImpl) UpdateCurrent(w http.ResponseWriter, r *ht
 	// Call service
 	userResponse, err := controller.UserService.UpdateCurrent(r.Context(), cookie.SessionId, userUpdateRequest)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to update user")
+			appError.LogError(err, "failed to update user")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -115,7 +115,7 @@ func (controller *UserControllerImpl) UpdateCurrent(w http.ResponseWriter, r *ht
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -140,7 +140,7 @@ func (controller *UserControllerImpl) GetCurrent(w http.ResponseWriter, r *http.
 	// Get cookie from context
 	cookie, ok := r.Context().Value(middleware.SessionContextKey).(web.SessionResponse)
 	if !ok {
-		myErrors.LogError(nil, "invalid session data")
+		appError.LogError(nil, "invalid session data")
 
 		w.WriteHeader(http.StatusUnauthorized)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -155,10 +155,10 @@ func (controller *UserControllerImpl) GetCurrent(w http.ResponseWriter, r *http.
 	// Call service
 	userResponse, err := controller.UserService.GetCurrent(r.Context(), cookie.SessionId)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to get current user")
+			appError.LogError(err, "failed to get current user")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -169,7 +169,7 @@ func (controller *UserControllerImpl) GetCurrent(w http.ResponseWriter, r *http.
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -194,10 +194,10 @@ func (controller *UserControllerImpl) GetAll(w http.ResponseWriter, r *http.Requ
 	// Call service
 	users, err := controller.UserService.GetAll(r.Context())
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to get all users")
+			appError.LogError(err, "failed to get all users")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -208,7 +208,7 @@ func (controller *UserControllerImpl) GetAll(w http.ResponseWriter, r *http.Requ
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -236,7 +236,7 @@ func (controller *UserControllerImpl) UpdateById(w http.ResponseWriter, r *http.
 	// Convert query params to int
 	userIdInt, err := strconv.Atoi(userId)
 	if err != nil {
-		myErrors.LogError(err, "failed to convert id to int")
+		appError.LogError(err, "failed to convert id to int")
 
 		w.WriteHeader(http.StatusNotFound)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -259,10 +259,10 @@ func (controller *UserControllerImpl) UpdateById(w http.ResponseWriter, r *http.
 	// Call service
 	userResponse, err := controller.UserService.UpdateById(r.Context(), userIdInt, userRequest)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to update user by id")
+			appError.LogError(err, "failed to update user by id")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -273,7 +273,7 @@ func (controller *UserControllerImpl) UpdateById(w http.ResponseWriter, r *http.
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -301,7 +301,7 @@ func (controller *UserControllerImpl) DeleteById(w http.ResponseWriter, r *http.
 	// Convert query params to int
 	userIdInt, err := strconv.Atoi(userId)
 	if err != nil {
-		myErrors.LogError(err, "failed to convert id to int")
+		appError.LogError(err, "failed to convert id to int")
 
 		w.WriteHeader(http.StatusNotFound)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -316,10 +316,10 @@ func (controller *UserControllerImpl) DeleteById(w http.ResponseWriter, r *http.
 	// Call service
 	err = controller.UserService.DeleteById(r.Context(), userIdInt)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to delete user by id")
+			appError.LogError(err, "failed to delete user by id")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -330,7 +330,7 @@ func (controller *UserControllerImpl) DeleteById(w http.ResponseWriter, r *http.
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -367,7 +367,7 @@ func (controller *UserControllerImpl) BulkCreate(w http.ResponseWriter, r *http.
 	// Parse multipart form (max size 10MB)
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
-		myErrors.LogError(err, "failed to parse multipart form")
+		appError.LogError(err, "failed to parse multipart form")
 
 		w.WriteHeader(http.StatusInternalServerError)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -382,7 +382,7 @@ func (controller *UserControllerImpl) BulkCreate(w http.ResponseWriter, r *http.
 	// Get the file with the field name "file"
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		myErrors.LogError(err, "file not found")
+		appError.LogError(err, "file not found")
 
 		w.WriteHeader(http.StatusNotFound)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -404,7 +404,7 @@ func (controller *UserControllerImpl) BulkCreate(w http.ResponseWriter, r *http.
 
 	firstRow, err := reader.Read()
 	if err != nil {
-		myErrors.LogError(err, "file is not valid CSV format")
+		appError.LogError(err, "file is not valid CSV format")
 
 		w.WriteHeader(http.StatusBadRequest)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -443,7 +443,7 @@ func (controller *UserControllerImpl) BulkCreate(w http.ResponseWriter, r *http.
 			break
 		}
 		if err != nil {
-			myErrors.LogError(err, "failed to read file")
+			appError.LogError(err, "failed to read file")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -479,10 +479,10 @@ func (controller *UserControllerImpl) BulkCreate(w http.ResponseWriter, r *http.
 	// Call service
 	userResponses, err := controller.UserService.CreateBulk(r.Context(), records)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to create user")
+			appError.LogError(err, "failed to create user")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -493,7 +493,7 @@ func (controller *UserControllerImpl) BulkCreate(w http.ResponseWriter, r *http.
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -518,10 +518,10 @@ func (controller *UserControllerImpl) GeneratePassword(w http.ResponseWriter, r 
 	// Call service
 	err := controller.UserService.GeneratePassword(r.Context())
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to generate password and send to whatsapp")
+			appError.LogError(err, "failed to generate password and send to whatsapp")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -532,7 +532,7 @@ func (controller *UserControllerImpl) GeneratePassword(w http.ResponseWriter, r 
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{

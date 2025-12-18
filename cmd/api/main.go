@@ -9,7 +9,7 @@ import (
 	"github.com/mhaatha/HIMA-TI-e-Election/config"
 	"github.com/mhaatha/HIMA-TI-e-Election/controller"
 	"github.com/mhaatha/HIMA-TI-e-Election/database"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/middleware"
 	"github.com/mhaatha/HIMA-TI-e-Election/repository"
 	"github.com/mhaatha/HIMA-TI-e-Election/service"
@@ -25,7 +25,7 @@ func main() {
 	// Load Config
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		myErrors.LogError(err, "failed to load config")
+		appError.LogError(err, "failed to load config")
 	}
 
 	// Logger Init
@@ -35,7 +35,7 @@ func main() {
 	// DB Init
 	err = database.ConnectDB(cfg)
 	if err != nil {
-		myErrors.LogError(err, "unable to connect to database")
+		appError.LogError(err, "unable to connect to database")
 	}
 	defer database.DB.Close()
 
@@ -125,5 +125,5 @@ func main() {
 	}
 
 	err = server.ListenAndServe()
-	myErrors.LogError(err, "server failed to start")
+	appError.LogError(err, "server failed to start")
 }

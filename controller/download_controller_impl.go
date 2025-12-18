@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
 	"github.com/mhaatha/HIMA-TI-e-Election/service"
@@ -28,10 +28,10 @@ func (controller *DownloadControllerImpl) GetPresignedUrl(w http.ResponseWriter,
 	if filename != "" {
 		data, err := controller.DownloadService.CreatePresignedURL(r.Context(), filename)
 		if err != nil {
-			var customError *myErrors.AppError
+			var customError *appError.AppError
 
 			if errors.As(err, &customError) {
-				myErrors.LogError(err, "failed to get download presigned URL")
+				appError.LogError(err, "failed to get download presigned URL")
 
 				w.WriteHeader(customError.StatusCode)
 				helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -42,7 +42,7 @@ func (controller *DownloadControllerImpl) GetPresignedUrl(w http.ResponseWriter,
 				})
 				return
 			} else {
-				myErrors.LogError(err, "unexpected error")
+				appError.LogError(err, "unexpected error")
 
 				w.WriteHeader(http.StatusInternalServerError)
 				helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{

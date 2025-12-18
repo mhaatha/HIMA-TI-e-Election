@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
 	"github.com/mhaatha/HIMA-TI-e-Election/service"
@@ -35,10 +35,10 @@ func (controller *CandidateControllerImpl) Create(w http.ResponseWriter, r *http
 	// Call service
 	candidateResponse, err := controller.CandidateService.Create(r.Context(), candidateRequest)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to create candidate")
+			appError.LogError(err, "failed to create candidate")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -49,7 +49,7 @@ func (controller *CandidateControllerImpl) Create(w http.ResponseWriter, r *http
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -77,10 +77,10 @@ func (controller *CandidateControllerImpl) GetCandidates(w http.ResponseWriter, 
 	// Call service
 	candidates, err := controller.CandidateService.GetCandidates(r.Context(), period)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to get candidates")
+			appError.LogError(err, "failed to get candidates")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -91,7 +91,7 @@ func (controller *CandidateControllerImpl) GetCandidates(w http.ResponseWriter, 
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -119,7 +119,7 @@ func (controller *CandidateControllerImpl) GetCandidateById(w http.ResponseWrite
 	// Convert query params to int
 	candidateIdInt, err := strconv.Atoi(candidateId)
 	if err != nil {
-		myErrors.LogError(err, "failed to convert id to int")
+		appError.LogError(err, "failed to convert id to int")
 
 		w.WriteHeader(http.StatusNotFound)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -134,10 +134,10 @@ func (controller *CandidateControllerImpl) GetCandidateById(w http.ResponseWrite
 	// Call service
 	candidate, err := controller.CandidateService.GetCandidateById(r.Context(), candidateIdInt)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to get candidate")
+			appError.LogError(err, "failed to get candidate")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -148,7 +148,7 @@ func (controller *CandidateControllerImpl) GetCandidateById(w http.ResponseWrite
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -176,7 +176,7 @@ func (controller *CandidateControllerImpl) UpdateCandidateById(w http.ResponseWr
 	// Convert query params to int
 	candidateIdInt, err := strconv.Atoi(candidateId)
 	if err != nil {
-		myErrors.LogError(err, "failed to convert id to int")
+		appError.LogError(err, "failed to convert id to int")
 
 		w.WriteHeader(http.StatusNotFound)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -199,10 +199,10 @@ func (controller *CandidateControllerImpl) UpdateCandidateById(w http.ResponseWr
 	// Call service
 	updatedCandidate, err := controller.CandidateService.UpdateCandidateById(r.Context(), candidateIdInt, candidateRequest)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to update candidate")
+			appError.LogError(err, "failed to update candidate")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -213,7 +213,7 @@ func (controller *CandidateControllerImpl) UpdateCandidateById(w http.ResponseWr
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -241,7 +241,7 @@ func (controller *CandidateControllerImpl) DeleteCandidateById(w http.ResponseWr
 	// Convert query params to int
 	candidateIdInt, err := strconv.Atoi(candidateId)
 	if err != nil {
-		myErrors.LogError(err, "failed to convert id to int")
+		appError.LogError(err, "failed to convert id to int")
 
 		w.WriteHeader(http.StatusNotFound)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -256,10 +256,10 @@ func (controller *CandidateControllerImpl) DeleteCandidateById(w http.ResponseWr
 	// Call service
 	err = controller.CandidateService.DeleteCandidateById(r.Context(), candidateIdInt)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to delete candidate")
+			appError.LogError(err, "failed to delete candidate")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -270,7 +270,7 @@ func (controller *CandidateControllerImpl) DeleteCandidateById(w http.ResponseWr
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{

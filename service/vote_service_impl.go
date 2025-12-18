@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/mhaatha/HIMA-TI-e-Election/config"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/domain"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
@@ -49,11 +49,11 @@ func (service *VoteServiceImpl) GetByCandidateId(ctx context.Context, candidateI
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return []web.VoteResponse{}, myErrors.NewAppError(
+		return []web.VoteResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -61,7 +61,7 @@ func (service *VoteServiceImpl) GetByCandidateId(ctx context.Context, candidateI
 	// Call repository
 	votes, err := service.VoteRepository.GetByCandidateId(ctx, tx, candidateId)
 	if err != nil {
-		return []web.VoteResponse{}, myErrors.NewAppError(
+		return []web.VoteResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -76,22 +76,22 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			myErrors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", myErrors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -106,7 +106,7 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 	// Check if candidate is in this period
 	currentPeriod := time.Now().Year()
 	if candidate.CreatedAt.Year() != currentPeriod {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"Candidate not found",
 			fmt.Sprintf("Candidate with id %v does not exist", request.CandidateId),
@@ -117,7 +117,7 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 	// Users can only vote once in a period. Users can vote again if the period has changed.
 	votingAccess, err := service.VotingAccessRepository.GetByUserId(ctx, tx, userId)
 	if err != nil {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusForbidden,
 			"Forbidden",
 			"You don't have an access to vote",
@@ -127,7 +127,7 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 	// Check if user has voted in this period
 	exists, err := service.VoteRepository.IsUserVotedInPeriod(ctx, tx, votingAccess.Hashed)
 	if err != nil {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -135,7 +135,7 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 		)
 	}
 	if exists {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"User has already voted",
 			"User has already voted in this period",
@@ -149,7 +149,7 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 		HashedNim:   votingAccess.Hashed,
 	})
 	if err != nil {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -160,7 +160,7 @@ func (service *VoteServiceImpl) SaveVoteRecord(ctx context.Context, request web.
 	// Get user by user_id
 	user, err := service.UserService.GetById(ctx, userId)
 	if err != nil {
-		return web.VoteCreateResponse{}, myErrors.NewAppError(
+		return web.VoteCreateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -180,11 +180,11 @@ func (service *VoteServiceImpl) GetTotalVotesByCandidateId(ctx context.Context, 
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.TotalVoteResponse{}, myErrors.NewAppError(
+		return web.TotalVoteResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -194,7 +194,7 @@ func (service *VoteServiceImpl) GetTotalVotesByCandidateId(ctx context.Context, 
 	if err != nil {
 		// If candidate is not found
 		if errors.Is(err, pgx.ErrNoRows) {
-			return web.TotalVoteResponse{}, myErrors.NewAppError(
+			return web.TotalVoteResponse{}, appError.NewAppError(
 				http.StatusNotFound,
 				"Candidate not found",
 				fmt.Sprintf("Candidate with id %v does not exist", candidateId),
@@ -202,7 +202,7 @@ func (service *VoteServiceImpl) GetTotalVotesByCandidateId(ctx context.Context, 
 			)
 		}
 
-		return web.TotalVoteResponse{}, myErrors.NewAppError(
+		return web.TotalVoteResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -218,7 +218,7 @@ func (service *VoteServiceImpl) GetTotalVotesByCandidateId(ctx context.Context, 
 func (service *VoteServiceImpl) StreamVoteEvents(ctx context.Context, conn *websocket.Conn) {
 	dbConn, err := service.DB.Acquire(context.Background())
 	if err != nil {
-		myErrors.LogError(err, "failed to acquire DB")
+		appError.LogError(err, "failed to acquire DB")
 		return
 	}
 	defer dbConn.Release()
@@ -227,7 +227,7 @@ func (service *VoteServiceImpl) StreamVoteEvents(ctx context.Context, conn *webs
 
 	_, err = dbConn.Exec(context.Background(), "LISTEN votes_channel")
 	if err != nil {
-		myErrors.LogError(err, "failed to LISTEN")
+		appError.LogError(err, "failed to LISTEN")
 		return
 	}
 
@@ -242,13 +242,13 @@ func (service *VoteServiceImpl) StreamVoteEvents(ctx context.Context, conn *webs
 				if ctx.Err() != nil {
 					return
 				}
-				myErrors.LogError(err, "WaitForNotification error")
+				appError.LogError(err, "WaitForNotification error")
 				continue
 			}
 			config.Log.Info(fmt.Sprintf("Received notifications: %v", notifications.Payload))
 
 			if err := conn.WriteMessage(websocket.TextMessage, []byte(notifications.Payload)); err != nil {
-				myErrors.LogError(err, "failed to write message")
+				appError.LogError(err, "failed to write message")
 				return
 			}
 		}
@@ -259,11 +259,11 @@ func (service *VoteServiceImpl) CheckIfUserHasVoted(ctx context.Context, session
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return false, myErrors.NewAppError(
+		return false, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -272,7 +272,7 @@ func (service *VoteServiceImpl) CheckIfUserHasVoted(ctx context.Context, session
 	// Get session by sessionId
 	session, err := service.AuthRepository.GetSessionById(ctx, tx, sessionId)
 	if err != nil {
-		return false, myErrors.NewAppError(
+		return false, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -283,7 +283,7 @@ func (service *VoteServiceImpl) CheckIfUserHasVoted(ctx context.Context, session
 	// Get user by userId
 	user, err := service.UserService.GetById(ctx, session.UserId)
 	if err != nil {
-		return false, myErrors.NewAppError(
+		return false, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -292,7 +292,7 @@ func (service *VoteServiceImpl) CheckIfUserHasVoted(ctx context.Context, session
 	}
 
 	if user.Role == "admin" {
-		return false, myErrors.NewAppError(
+		return false, appError.NewAppError(
 			http.StatusBadRequest,
 			"Admin cannot vote",
 			"Admin does not have permission to vote",
@@ -303,7 +303,7 @@ func (service *VoteServiceImpl) CheckIfUserHasVoted(ctx context.Context, session
 	// Check is user already voted in this period
 	isVoted, err := service.VoteRepository.IsUserEverVoted(ctx, tx, session.UserId)
 	if err != nil {
-		return false, myErrors.NewAppError(
+		return false, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",

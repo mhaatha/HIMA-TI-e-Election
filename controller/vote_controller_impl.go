@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/julienschmidt/httprouter"
 	"github.com/mhaatha/HIMA-TI-e-Election/config"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/middleware"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
@@ -53,7 +53,7 @@ func (controller *VoteControllerImpl) Save(w http.ResponseWriter, r *http.Reques
 	// Get cookie from context
 	cookie, ok := r.Context().Value(middleware.SessionContextKey).(web.SessionResponse)
 	if !ok {
-		myErrors.LogError(nil, "invalid session data")
+		appError.LogError(nil, "invalid session data")
 
 		w.WriteHeader(http.StatusUnauthorized)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -76,10 +76,10 @@ func (controller *VoteControllerImpl) Save(w http.ResponseWriter, r *http.Reques
 	// Call service
 	voteResponse, err := controller.VoteService.SaveVoteRecord(r.Context(), voteRequest, cookie.UserId)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to save vote record")
+			appError.LogError(err, "failed to save vote record")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -90,7 +90,7 @@ func (controller *VoteControllerImpl) Save(w http.ResponseWriter, r *http.Reques
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -131,10 +131,10 @@ func (controller *VoteControllerImpl) GetTotalVotesByCandidateId(w http.Response
 	// Call service
 	totalVotes, err := controller.VoteService.GetTotalVotesByCandidateId(r.Context(), candidateIdInt)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to get total votes")
+			appError.LogError(err, "failed to get total votes")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -145,7 +145,7 @@ func (controller *VoteControllerImpl) GetTotalVotesByCandidateId(w http.Response
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -169,7 +169,7 @@ func (controller *VoteControllerImpl) GetTotalVotesByCandidateId(w http.Response
 func (controller *VoteControllerImpl) VotesLiveResult(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		myErrors.LogError(err, "failed to upgrade connection")
+		appError.LogError(err, "failed to upgrade connection")
 
 		w.WriteHeader(http.StatusInternalServerError)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -226,7 +226,7 @@ func (controller *VoteControllerImpl) CheckIfUserHasVoted(w http.ResponseWriter,
 	// Get cookie from context
 	cookie, ok := r.Context().Value(middleware.SessionContextKey).(web.SessionResponse)
 	if !ok {
-		myErrors.LogError(nil, "invalid session data")
+		appError.LogError(nil, "invalid session data")
 
 		w.WriteHeader(http.StatusUnauthorized)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -241,10 +241,10 @@ func (controller *VoteControllerImpl) CheckIfUserHasVoted(w http.ResponseWriter,
 	// Call service
 	isVoted, err := controller.VoteService.CheckIfUserHasVoted(r.Context(), cookie.SessionId)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "failed to check if user has voted")
+			appError.LogError(err, "failed to check if user has voted")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -255,7 +255,7 @@ func (controller *VoteControllerImpl) CheckIfUserHasVoted(w http.ResponseWriter,
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{

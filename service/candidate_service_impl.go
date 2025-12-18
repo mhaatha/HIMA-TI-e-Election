@@ -17,7 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	envConfig "github.com/mhaatha/HIMA-TI-e-Election/config"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/domain"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
@@ -46,22 +46,22 @@ func (service *CandidateServiceImpl) Create(ctx context.Context, request web.Can
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			myErrors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", myErrors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -69,7 +69,7 @@ func (service *CandidateServiceImpl) Create(ctx context.Context, request web.Can
 	// Get all candidates for the shake of validation
 	candidates, err := service.CandidateRepository.GetAll(ctx, tx)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -86,41 +86,41 @@ func (service *CandidateServiceImpl) Create(ctx context.Context, request web.Can
 
 		// Numbers cannot be the same in the same period
 		if request.Number == candidate.Number && currentPeriod == currentCandidatePeriod {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"Number is already in use in this period",
-				fmt.Errorf("%w", myErrors.ErrNumberIsUsed),
+				fmt.Errorf("%w", appError.ErrNumberIsUsed),
 			)
 		}
 
 		// President NIM must be unique
 		if request.PresidentNIM == candidate.PresidentNIM || request.PresidentNIM == candidate.ViceNIM {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"President NIM is already exists",
-				fmt.Errorf("%w", myErrors.ErrNIMAlreadyExists),
+				fmt.Errorf("%w", appError.ErrNIMAlreadyExists),
 			)
 		}
 
 		// Vice NIM must be unique
 		if request.ViceNIM == candidate.ViceNIM || request.ViceNIM == candidate.PresidentNIM {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"Vice NIM is already exists",
-				fmt.Errorf("%w", myErrors.ErrNIMAlreadyExists),
+				fmt.Errorf("%w", appError.ErrNIMAlreadyExists),
 			)
 		}
 
 		// Photo_key must be unique
 		if request.PhotoKey == candidate.PhotoKey {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				fmt.Sprintf("Photo key '%s' is already used, please choose another photo key", request.PhotoKey),
-				fmt.Errorf("%w", myErrors.ErrPhotoKeyIsUsed),
+				fmt.Errorf("%w", appError.ErrPhotoKeyIsUsed),
 			)
 		}
 	}
@@ -152,7 +152,7 @@ func (service *CandidateServiceImpl) Create(ctx context.Context, request web.Can
 	// Save candidate to database
 	candidate, err = service.CandidateRepository.Save(ctx, tx, candidate)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -168,11 +168,11 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+		return []web.CandidateResponseWithURL{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -183,11 +183,11 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 		config.WithRegion("auto"),
 	)
 	if err != nil {
-		return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+		return []web.CandidateResponseWithURL{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrLoadDefaultConfig, err),
+			fmt.Errorf("%w: %v", appError.ErrLoadDefaultConfig, err),
 		)
 	}
 
@@ -205,11 +205,11 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 	if period != "" {
 		// Period must be a positive number and can't exceed 4 digits
 		if len(period) > 4 || string(period[0]) == "-" {
-			return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+			return []web.CandidateResponseWithURL{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"Period must be a positive number and can't exceed 4 digits",
-				fmt.Errorf("%w", myErrors.ErrInvalidPeriodRange),
+				fmt.Errorf("%w", appError.ErrInvalidPeriodRange),
 			)
 		}
 
@@ -217,15 +217,15 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 		if err != nil {
 			// Period must be a valid number
 			if errors.Is(err, strconv.ErrSyntax) {
-				return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+				return []web.CandidateResponseWithURL{}, appError.NewAppError(
 					http.StatusBadRequest,
 					"Invalid request payload",
 					"Period must be a number and can't contain characters",
-					fmt.Errorf("%w: %v", myErrors.ErrInvalidPeriodSyntax, err),
+					fmt.Errorf("%w: %v", appError.ErrInvalidPeriodSyntax, err),
 				)
 			}
 
-			return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+			return []web.CandidateResponseWithURL{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -236,7 +236,7 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 		// Get candidates by specific period
 		candidates, err := service.CandidateRepository.GetByPeriod(ctx, tx, periodInt)
 		if err != nil {
-			return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+			return []web.CandidateResponseWithURL{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -254,11 +254,11 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 				Key:    aws.String(candidate.PhotoKey),
 			}, s3.WithPresignExpires(24*time.Hour))
 			if err != nil {
-				return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+				return []web.CandidateResponseWithURL{}, appError.NewAppError(
 					http.StatusInternalServerError,
 					"Internal Server Error",
 					"Failed to process your request due to an unexpected error. Please try again later.",
-					fmt.Errorf("%w: %v", myErrors.ErrCreatePresignedPut, err),
+					fmt.Errorf("%w: %v", appError.ErrCreatePresignedPut, err),
 				)
 			}
 
@@ -286,7 +286,7 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 		// Get all candidates
 		candidates, err := service.CandidateRepository.GetAll(ctx, tx)
 		if err != nil {
-			return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+			return []web.CandidateResponseWithURL{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -304,11 +304,11 @@ func (service *CandidateServiceImpl) GetCandidates(ctx context.Context, period s
 				Key:    aws.String(candidate.PhotoKey),
 			}, s3.WithPresignExpires(24*time.Hour))
 			if err != nil {
-				return []web.CandidateResponseWithURL{}, myErrors.NewAppError(
+				return []web.CandidateResponseWithURL{}, appError.NewAppError(
 					http.StatusInternalServerError,
 					"Internal Server Error",
 					"Failed to process your request due to an unexpected error. Please try again later.",
-					fmt.Errorf("%w: %v", myErrors.ErrCreatePresignedPut, err),
+					fmt.Errorf("%w: %v", appError.ErrCreatePresignedPut, err),
 				)
 			}
 
@@ -339,11 +339,11 @@ func (service *CandidateServiceImpl) GetCandidateById(ctx context.Context, candi
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.CandidateResponseWithURL{}, myErrors.NewAppError(
+		return web.CandidateResponseWithURL{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -354,11 +354,11 @@ func (service *CandidateServiceImpl) GetCandidateById(ctx context.Context, candi
 		config.WithRegion("auto"),
 	)
 	if err != nil {
-		return web.CandidateResponseWithURL{}, myErrors.NewAppError(
+		return web.CandidateResponseWithURL{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrLoadDefaultConfig, err),
+			fmt.Errorf("%w: %v", appError.ErrLoadDefaultConfig, err),
 		)
 	}
 
@@ -375,7 +375,7 @@ func (service *CandidateServiceImpl) GetCandidateById(ctx context.Context, candi
 	if err != nil {
 		// If candidate not found
 		if errors.Is(err, pgx.ErrNoRows) {
-			return web.CandidateResponseWithURL{}, myErrors.NewAppError(
+			return web.CandidateResponseWithURL{}, appError.NewAppError(
 				http.StatusNotFound,
 				"Candidate not found",
 				fmt.Sprintf("Candidate with id %v does not exist", candidateId),
@@ -383,7 +383,7 @@ func (service *CandidateServiceImpl) GetCandidateById(ctx context.Context, candi
 			)
 		}
 
-		return web.CandidateResponseWithURL{}, myErrors.NewAppError(
+		return web.CandidateResponseWithURL{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -397,11 +397,11 @@ func (service *CandidateServiceImpl) GetCandidateById(ctx context.Context, candi
 		Key:    aws.String(candidate.PhotoKey),
 	}, s3.WithPresignExpires(24*time.Hour))
 	if err != nil {
-		return web.CandidateResponseWithURL{}, myErrors.NewAppError(
+		return web.CandidateResponseWithURL{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrCreatePresignedPut, err),
+			fmt.Errorf("%w: %v", appError.ErrCreatePresignedPut, err),
 		)
 	}
 
@@ -428,10 +428,10 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			myErrors.FormatValidationDetails(err.(validator.ValidationErrors)),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
 			fmt.Errorf("failed to update candidate with id %v: %v", candidateId, err),
 		)
 	}
@@ -439,18 +439,18 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
 
 	// Request body cannot be empty validation
 	if helper.IsEmptyStruct(request) {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
 			"Request body cannot be empty",
@@ -463,7 +463,7 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 	if err != nil {
 		// If candidate not found
 		if errors.Is(err, pgx.ErrNoRows) {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusNotFound,
 				"Candidate not found",
 				fmt.Sprintf("Candidate with id '%v' does not exist", candidateId),
@@ -471,7 +471,7 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 			)
 		}
 
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -482,7 +482,7 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 	// Check whether candidate's record is already on votes table
 	votes, err := service.VoteService.GetByCandidateId(ctx, candidate.Id)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -492,11 +492,11 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 
 	// If votes has data, candidate cannot be deleted
 	if len(votes) > 0 {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusConflict,
 			"Candidate has votes",
 			"Cannot delete candidate because votes have already submitted",
-			fmt.Errorf("%w", myErrors.ErrCandidateHasVotes),
+			fmt.Errorf("%w", appError.ErrCandidateHasVotes),
 		)
 	}
 
@@ -535,7 +535,7 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 	// Get all candidates for the shake of validation
 	candidates, err := service.CandidateRepository.GetAll(ctx, tx)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -556,41 +556,41 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 
 		// Numbers cannot be the same in the same period
 		if request.Number == c.Number && currentPeriod == currentCandidatePeriod {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"Number is already in use in this period",
-				fmt.Errorf("%w", myErrors.ErrNumberIsUsed),
+				fmt.Errorf("%w", appError.ErrNumberIsUsed),
 			)
 		}
 
 		// President NIM must be unique
 		if request.PresidentNIM == c.PresidentNIM || request.PresidentNIM == c.ViceNIM {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"President NIM is already exists",
-				fmt.Errorf("%w", myErrors.ErrNIMAlreadyExists),
+				fmt.Errorf("%w", appError.ErrNIMAlreadyExists),
 			)
 		}
 
 		// Vice NIM must be unique
 		if request.ViceNIM == c.ViceNIM || request.ViceNIM == c.PresidentNIM {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"Vice NIM is already exists",
-				fmt.Errorf("%w", myErrors.ErrNIMAlreadyExists),
+				fmt.Errorf("%w", appError.ErrNIMAlreadyExists),
 			)
 		}
 
 		// Photo_key must be unique
 		if request.PhotoKey == c.PhotoKey {
-			return web.CandidateResponse{}, myErrors.NewAppError(
+			return web.CandidateResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				fmt.Sprintf("Photo key '%s' is already used, please choose another photo key", request.PhotoKey),
-				fmt.Errorf("%w", myErrors.ErrPhotoKeyIsUsed),
+				fmt.Errorf("%w", appError.ErrPhotoKeyIsUsed),
 			)
 		}
 	}
@@ -598,7 +598,7 @@ func (service *CandidateServiceImpl) UpdateCandidateById(ctx context.Context, ca
 	// Call update repository
 	candidate, err = service.CandidateRepository.UpdateById(ctx, tx, candidateId, candidate)
 	if err != nil {
-		return web.CandidateResponse{}, myErrors.NewAppError(
+		return web.CandidateResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -613,11 +613,11 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -627,7 +627,7 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 	if err != nil {
 		// If candidate not found
 		if errors.Is(err, pgx.ErrNoRows) {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusNotFound,
 				"Candidate not found",
 				fmt.Sprintf("Candidate with id %v does not exist", candidateId),
@@ -635,7 +635,7 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 			)
 		}
 
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -646,7 +646,7 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 	// Check whether candidate's record is already on votes table
 	votes, err := service.VoteService.GetByCandidateId(ctx, candidate.Id)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -656,11 +656,11 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 
 	// If votes has data, candidate cannot be deleted
 	if len(votes) > 0 {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusConflict,
 			"Candidate has votes",
 			"Cannot delete candidate because votes have already submitted",
-			fmt.Errorf("%w", myErrors.ErrCandidateHasVotes),
+			fmt.Errorf("%w", appError.ErrCandidateHasVotes),
 		)
 	}
 
@@ -670,11 +670,11 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 		config.WithRegion("auto"),
 	)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrLoadDefaultConfig, err),
+			fmt.Errorf("%w: %v", appError.ErrLoadDefaultConfig, err),
 		)
 	}
 
@@ -689,18 +689,18 @@ func (service *CandidateServiceImpl) DeleteCandidateById(ctx context.Context, ca
 		Key:    aws.String(candidate.PhotoKey),
 	})
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrCreatePresignedPut, err),
+			fmt.Errorf("%w: %v", appError.ErrCreatePresignedPut, err),
 		)
 	}
 
 	// Delete candidate by id
 	err = service.CandidateRepository.DeleteById(ctx, tx, candidateId)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",

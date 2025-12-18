@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
 	"github.com/mhaatha/HIMA-TI-e-Election/service"
@@ -23,7 +23,7 @@ func UserMiddleware(next httprouter.Handle, authService service.AuthService) htt
 
 		// Check if cookie exists
 		if err != nil || cookie.Value == "" {
-			myErrors.LogError(err, "cookie not found")
+			appError.LogError(err, "cookie not found")
 
 			w.WriteHeader(http.StatusUnauthorized)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -38,10 +38,10 @@ func UserMiddleware(next httprouter.Handle, authService service.AuthService) htt
 		// Call service
 		session, err := authService.UserValidateSession(r.Context(), cookie.Value)
 		if err != nil {
-			var customError *myErrors.AppError
+			var customError *appError.AppError
 
 			if errors.As(err, &customError) {
-				myErrors.LogError(err, "invalid session")
+				appError.LogError(err, "invalid session")
 
 				w.WriteHeader(customError.StatusCode)
 				helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -52,7 +52,7 @@ func UserMiddleware(next httprouter.Handle, authService service.AuthService) htt
 				})
 				return
 			} else {
-				myErrors.LogError(err, "unexpected error")
+				appError.LogError(err, "unexpected error")
 
 				w.WriteHeader(http.StatusInternalServerError)
 				helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -78,7 +78,7 @@ func AdminMiddleware(next httprouter.Handle, authService service.AuthService) ht
 
 		// Check if cookie exists
 		if err != nil || cookie.Value == "" {
-			myErrors.LogError(err, "cookie not found")
+			appError.LogError(err, "cookie not found")
 
 			w.WriteHeader(http.StatusUnauthorized)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -93,10 +93,10 @@ func AdminMiddleware(next httprouter.Handle, authService service.AuthService) ht
 		// Call service
 		session, err := authService.AdminValidateSession(r.Context(), cookie.Value)
 		if err != nil {
-			var customError *myErrors.AppError
+			var customError *appError.AppError
 
 			if errors.As(err, &customError) {
-				myErrors.LogError(err, "invalid session")
+				appError.LogError(err, "invalid session")
 
 				w.WriteHeader(customError.StatusCode)
 				helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -107,7 +107,7 @@ func AdminMiddleware(next httprouter.Handle, authService service.AuthService) ht
 				})
 				return
 			} else {
-				myErrors.LogError(err, "unexpected error")
+				appError.LogError(err, "unexpected error")
 
 				w.WriteHeader(http.StatusInternalServerError)
 				helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{

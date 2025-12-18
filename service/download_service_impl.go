@@ -16,7 +16,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	envConfig "github.com/mhaatha/HIMA-TI-e-Election/config"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
 	"github.com/mhaatha/HIMA-TI-e-Election/repository"
 )
@@ -40,7 +40,7 @@ type DownloadServiceImpl struct {
 func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, fileName string) (web.PresignedURLResponse, error) {
 	// Validate the fileName, it should can't exceed 4 digit
 	if len(fileName) != 4 {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid file name",
 			"File name should be 4 digits",
@@ -53,7 +53,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 	if err != nil {
 		// Filename must be a valid number
 		if errors.Is(err, strconv.ErrSyntax) {
-			return web.PresignedURLResponse{}, myErrors.NewAppError(
+			return web.PresignedURLResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
 				"Filename must be a number and can't contain characters",
@@ -61,7 +61,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 			)
 		}
 
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -75,11 +75,11 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 		config.WithRegion("auto"),
 	)
 	if err != nil {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrLoadDefaultConfig, err),
+			fmt.Errorf("%w: %v", appError.ErrLoadDefaultConfig, err),
 		)
 	}
 
@@ -91,7 +91,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 	// Read the log local file
 	logFilePath, err := envConfig.GetLogFilePathByYear(fileName)
 	if err != nil {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -102,7 +102,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 	file, err := os.Open(logFilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return web.PresignedURLResponse{}, myErrors.NewAppError(
+			return web.PresignedURLResponse{}, appError.NewAppError(
 				http.StatusNotFound,
 				"Log file is not found",
 				fmt.Sprintf("Log file from year %v is not found", fileName),
@@ -110,7 +110,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 			)
 		}
 
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -125,7 +125,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 		Body:   file,
 	})
 	if err != nil {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Failed to upload log",
 			"Server failed to upload the log file to storage",
@@ -141,7 +141,7 @@ func (service *DownloadServiceImpl) CreatePresignedURL(ctx context.Context, file
 		Key:    aws.String(fmt.Sprintf("logs/vote_%s.log", fileName)),
 	}, s3.WithPresignExpires(5*time.Minute))
 	if err != nil {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Failed to generate download link",
 			"Server failed to generate presigned URL for log download",

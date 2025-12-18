@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	envConfig "github.com/mhaatha/HIMA-TI-e-Election/config"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/domain"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
@@ -42,22 +42,22 @@ func (service *UserServiceImpl) Create(ctx context.Context, request web.UserCrea
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			myErrors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", myErrors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -65,7 +65,7 @@ func (service *UserServiceImpl) Create(ctx context.Context, request web.UserCrea
 	// Check if NIM already exists
 	user, err := service.UserRepository.GetByNIM(ctx, tx, request.NIM)
 	if err == nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"NIM already exists",
 			"The NIM you provided already exists. Try another NIM or try logging in instead.",
@@ -76,7 +76,7 @@ func (service *UserServiceImpl) Create(ctx context.Context, request web.UserCrea
 	// Check if phone_number already exists
 	user, err = service.UserRepository.GetByPhoneNumber(ctx, tx, request.PhoneNumber)
 	if err == nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Phone number already exists",
 			"The phone number you provided already exists. Try another phone number.",
@@ -87,7 +87,7 @@ func (service *UserServiceImpl) Create(ctx context.Context, request web.UserCrea
 	// Hash the password before saving it to database
 	hashedPassword, err := helper.HashPassword(request.Password)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -107,7 +107,7 @@ func (service *UserServiceImpl) Create(ctx context.Context, request web.UserCrea
 	// Save to database
 	user, err = service.UserRepository.Save(ctx, tx, user)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -123,7 +123,7 @@ func (service *UserServiceImpl) Create(ctx context.Context, request web.UserCrea
 		})
 
 		if err != nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -139,22 +139,22 @@ func (service *UserServiceImpl) UpdateCurrent(ctx context.Context, sessionId str
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			myErrors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", myErrors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -176,7 +176,7 @@ func (service *UserServiceImpl) UpdateCurrent(ctx context.Context, sessionId str
 	// Call repository to get current user
 	user, err := service.UserRepository.GetUserBySession(ctx, tx, sessionId)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"User not found",
 			"The user you are trying to update does not exist.",
@@ -189,11 +189,11 @@ func (service *UserServiceImpl) UpdateCurrent(ctx context.Context, sessionId str
 		_, err := service.UserRepository.GetByNIM(ctx, tx, request.NIM)
 		// if err == nil it means NIM already used by another user
 		if err == nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"NIM already exists",
 				"The NIM you provided already exists. Try another NIM or try logging in instead.",
-				fmt.Errorf("user with NIM %s already exists: %w", request.NIM, myErrors.ErrNIMAlreadyExists),
+				fmt.Errorf("user with NIM %s already exists: %w", request.NIM, appError.ErrNIMAlreadyExists),
 			)
 		}
 	}
@@ -201,7 +201,7 @@ func (service *UserServiceImpl) UpdateCurrent(ctx context.Context, sessionId str
 	// Call repository to update current user
 	updatedUser, err := service.UserRepository.UpdatePartial(ctx, tx, user.Id, updates)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"User not found",
 			"The user you are trying to update does not exist.",
@@ -217,7 +217,7 @@ func (service *UserServiceImpl) UpdateCurrent(ctx context.Context, sessionId str
 		})
 
 		if err != nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -233,11 +233,11 @@ func (service *UserServiceImpl) GetCurrent(ctx context.Context, sessionId string
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -245,7 +245,7 @@ func (service *UserServiceImpl) GetCurrent(ctx context.Context, sessionId string
 	// Check if user exists
 	user, err := service.UserRepository.GetUserBySession(ctx, tx, sessionId)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"User not found",
 			"The user you are trying to get does not exist.",
@@ -260,11 +260,11 @@ func (service *UserServiceImpl) GetByNIM(ctx context.Context, nim string) (web.U
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.UserGetByNimResponse{}, myErrors.NewAppError(
+		return web.UserGetByNimResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -272,11 +272,11 @@ func (service *UserServiceImpl) GetByNIM(ctx context.Context, nim string) (web.U
 	// Check if NIM exists
 	user, err := service.UserRepository.GetByNIM(ctx, tx, nim)
 	if err != nil {
-		return web.UserGetByNimResponse{}, myErrors.NewAppError(
+		return web.UserGetByNimResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"User not found",
 			"The user you are trying to get does not exist.",
-			fmt.Errorf("%w: user with NIM %s is not found", myErrors.ErrNIMNotFound, nim),
+			fmt.Errorf("%w: user with NIM %s is not found", appError.ErrNIMNotFound, nim),
 		)
 	}
 
@@ -287,11 +287,11 @@ func (service *UserServiceImpl) GetAdmins(ctx context.Context) ([]web.AdminRespo
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return []web.AdminResponse{}, myErrors.NewAppError(
+		return []web.AdminResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -299,7 +299,7 @@ func (service *UserServiceImpl) GetAdmins(ctx context.Context) ([]web.AdminRespo
 	// Get admins
 	admins, err := service.UserRepository.GetAdmins(ctx, tx)
 	if err != nil {
-		return []web.AdminResponse{}, myErrors.NewAppError(
+		return []web.AdminResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"Admins not found",
 			"The admins you are trying to get do not exist.",
@@ -314,11 +314,11 @@ func (service *UserServiceImpl) GetById(ctx context.Context, userId int) (web.Us
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -326,7 +326,7 @@ func (service *UserServiceImpl) GetById(ctx context.Context, userId int) (web.Us
 	// Check if user exists
 	user, err := service.UserRepository.GetById(ctx, tx, userId)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusNotFound,
 			"User not found",
 			"The user you are trying to get does not exist.",
@@ -341,11 +341,11 @@ func (service *UserServiceImpl) GetAll(ctx context.Context) ([]web.UserResponse,
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return []web.UserResponse{}, myErrors.NewAppError(
+		return []web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -353,11 +353,11 @@ func (service *UserServiceImpl) GetAll(ctx context.Context) ([]web.UserResponse,
 	// Get users
 	users, err := service.UserRepository.GetAll(ctx, tx)
 	if err != nil {
-		return []web.UserResponse{}, myErrors.NewAppError(
+		return []web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 
@@ -368,22 +368,22 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			myErrors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", myErrors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -393,7 +393,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 	if err != nil {
 		// If user not found
 		if errors.Is(err, pgx.ErrNoRows) {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusNotFound,
 				"User not found",
 				fmt.Sprintf("User with id %v does not exist", userId),
@@ -401,7 +401,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 			)
 		}
 
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -412,7 +412,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 	// Check is user ever voted
 	isVoted, err := service.VotingAccessRepository.IsUserEverVoted(ctx, tx, userId)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -420,7 +420,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 		)
 	}
 	if isVoted {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusConflict,
 			"User has already voted",
 			"Can't update user because user has already voted",
@@ -433,11 +433,11 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 		_, err := service.UserRepository.GetByNIM(ctx, tx, request.NIM)
 		// if err == nil it means NIM already used by another user
 		if err == nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"NIM already exists",
 				"The NIM you provided already exists. Try another NIM or try logging in instead.",
-				fmt.Errorf("user with NIM %s already exists: %w", request.NIM, myErrors.ErrNIMAlreadyExists),
+				fmt.Errorf("user with NIM %s already exists: %w", request.NIM, appError.ErrNIMAlreadyExists),
 			)
 		}
 	}
@@ -447,7 +447,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 		_, err := service.UserRepository.GetByPhoneNumber(ctx, tx, request.PhoneNumber)
 		// if err == nil it means phone number already used by another user
 		if err == nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Phone number already exists",
 				"The phone number you provided already exists. Try another phone number.",
@@ -460,7 +460,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 	if user.Role == "student" {
 		err = service.VotingAccessRepository.DeleteByUserId(ctx, tx, userId)
 		if err != nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -483,7 +483,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 		// Hash the password
 		hashedPassword, err := helper.HashPassword(request.Password)
 		if err != nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -509,7 +509,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 		})
 
 		if err != nil {
-			return web.UserResponse{}, myErrors.NewAppError(
+			return web.UserResponse{}, appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -521,7 +521,7 @@ func (service *UserServiceImpl) UpdateById(ctx context.Context, userId int, requ
 	// Call repository
 	userResponse, err := service.UserRepository.UpdateById(ctx, tx, userId, user)
 	if err != nil {
-		return web.UserResponse{}, myErrors.NewAppError(
+		return web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -536,11 +536,11 @@ func (service *UserServiceImpl) DeleteById(ctx context.Context, userId int) erro
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -550,7 +550,7 @@ func (service *UserServiceImpl) DeleteById(ctx context.Context, userId int) erro
 	if err != nil {
 		// If user not found
 		if errors.Is(err, pgx.ErrNoRows) {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusNotFound,
 				"User not found",
 				fmt.Sprintf("User with id %v does not exist", userId),
@@ -558,7 +558,7 @@ func (service *UserServiceImpl) DeleteById(ctx context.Context, userId int) erro
 			)
 		}
 
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -569,7 +569,7 @@ func (service *UserServiceImpl) DeleteById(ctx context.Context, userId int) erro
 	// Check is user ever voted
 	isVoted, err := service.VotingAccessRepository.IsUserEverVoted(ctx, tx, userId)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -577,7 +577,7 @@ func (service *UserServiceImpl) DeleteById(ctx context.Context, userId int) erro
 		)
 	}
 	if isVoted {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusConflict,
 			"User has already voted",
 			"Can't delete user because user has already voted",
@@ -588,7 +588,7 @@ func (service *UserServiceImpl) DeleteById(ctx context.Context, userId int) erro
 	// Call repository
 	err = service.UserRepository.DeleteById(ctx, tx, userId)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -603,11 +603,11 @@ func (service *UserServiceImpl) CreateBulk(ctx context.Context, request []web.Us
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return []web.UserResponse{}, myErrors.NewAppError(
+		return []web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -619,18 +619,18 @@ func (service *UserServiceImpl) CreateBulk(ctx context.Context, request []web.Us
 		// Validate request
 		err := service.Validate.Struct(currentUser)
 		if err != nil {
-			return []web.UserResponse{}, myErrors.NewAppError(
+			return []web.UserResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Invalid request payload",
-				myErrors.FormatValidationDetailsWithRow((err.(validator.ValidationErrors)), i+1),
-				fmt.Errorf("%w: %v in csv line %d", myErrors.ErrValidation, err, i+1),
+				appError.FormatValidationDetailsWithRow((err.(validator.ValidationErrors)), i+1),
+				fmt.Errorf("%w: %v in csv line %d", appError.ErrValidation, err, i+1),
 			)
 		}
 
 		// Check if NIM already exists
 		_, err = service.UserRepository.GetByNIM(ctx, tx, currentUser.NIM)
 		if err == nil {
-			return []web.UserResponse{}, myErrors.NewAppError(
+			return []web.UserResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"NIM already exists",
 				fmt.Sprintf("CSV's line %d: NIM '%s' is already exists", i+1, currentUser.NIM),
@@ -641,7 +641,7 @@ func (service *UserServiceImpl) CreateBulk(ctx context.Context, request []web.Us
 		// Check if phone_number already exists
 		_, err = service.UserRepository.GetByPhoneNumber(ctx, tx, currentUser.PhoneNumber)
 		if err == nil {
-			return []web.UserResponse{}, myErrors.NewAppError(
+			return []web.UserResponse{}, appError.NewAppError(
 				http.StatusBadRequest,
 				"Phone number already exists",
 				fmt.Sprintf("CSV's line %d: Phone number '%s' is already exists", i+1, currentUser.PhoneNumber),
@@ -660,7 +660,7 @@ func (service *UserServiceImpl) CreateBulk(ctx context.Context, request []web.Us
 	// Insert user data to database in bulk
 	users, err = service.UserRepository.SaveBulk(ctx, tx, users)
 	if err != nil {
-		return []web.UserResponse{}, myErrors.NewAppError(
+		return []web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -683,7 +683,7 @@ func (service *UserServiceImpl) CreateBulk(ctx context.Context, request []web.Us
 	// Insert voting_access data to database in bulk
 	err = service.VotingAccessRepository.CreateBulk(ctx, tx, votingAccesses)
 	if err != nil {
-		return []web.UserResponse{}, myErrors.NewAppError(
+		return []web.UserResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -698,11 +698,11 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 	// Open Transaction
 	tx, err := service.DB.Begin(ctx)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.CommitOrRollback(ctx, tx)
@@ -710,7 +710,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 	// Get all users with null password
 	users, err := service.UserRepository.GetUsersWithNullPassword(ctx, tx)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -720,7 +720,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 
 	if len(users) == 0 {
 		envConfig.Log.Info("No users with null password, skipping password generation")
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusOK,
 			"No users with null password",
 			"Password generation skipped",
@@ -742,7 +742,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 		// Generate password
 		password, err := helper.GeneratePassword(helper.DefaultPasswordLength)
 		if err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -760,7 +760,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 		// Hash the password
 		hashedPassword, err := helper.HashPassword(password)
 		if err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -776,7 +776,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 	// Bulk update for all users
 	err = service.UserRepository.UpdateBulk(ctx, tx, listOfUsers)
 	if err != nil {
-		return myErrors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -795,7 +795,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 		// Convert the user data to JSON
 		jsonPayload, err := json.Marshal(payload)
 		if err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -806,7 +806,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 		// Create the request
 		req, err := http.NewRequest(http.MethodPost, URL, bytes.NewBuffer(jsonPayload))
 		if err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -822,7 +822,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 		client := http.Client{}
 		resp, err := client.Do(req)
 		if err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -833,7 +833,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -843,7 +843,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 
 		var fonnteResp map[string]interface{}
 		if err := json.Unmarshal(body, &fonnteResp); err != nil {
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				"Failed to process your request due to an unexpected error. Please try again later.",
@@ -854,7 +854,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 		if !fonnteResp["status"].(bool) {
 			// Rollback the transaction
 			if err := tx.Rollback(ctx); err != nil {
-				return myErrors.NewAppError(
+				return appError.NewAppError(
 					http.StatusInternalServerError,
 					"Internal Server Error",
 					"Failed to process your request due to an unexpected error. Please try again later.",
@@ -862,7 +862,7 @@ func (service *UserServiceImpl) GeneratePassword(ctx context.Context) error {
 				)
 			}
 
-			return myErrors.NewAppError(
+			return appError.NewAppError(
 				http.StatusInternalServerError,
 				"Internal Server Error",
 				fmt.Sprintf("Failed to send message to WhatsApp: %v", fonnteResp["reason"].(string)),

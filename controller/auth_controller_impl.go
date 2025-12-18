@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/middleware"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
@@ -47,10 +47,10 @@ func (controller *AuthControllerImpl) Login(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(err, "login failed")
+			appError.LogError(err, "login failed")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -61,7 +61,7 @@ func (controller *AuthControllerImpl) Login(w http.ResponseWriter, r *http.Reque
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -97,7 +97,7 @@ func (controller *AuthControllerImpl) Logout(w http.ResponseWriter, r *http.Requ
 	// Get cookie from context
 	cookie, ok := r.Context().Value(middleware.SessionContextKey).(web.SessionResponse)
 	if !ok {
-		myErrors.LogError(nil, "invalid session data")
+		appError.LogError(nil, "invalid session data")
 
 		w.WriteHeader(http.StatusUnauthorized)
 		helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -112,10 +112,10 @@ func (controller *AuthControllerImpl) Logout(w http.ResponseWriter, r *http.Requ
 	// Call service
 	err := controller.AuthService.Logout(r.Context(), cookie.SessionId)
 	if err != nil {
-		var customError *myErrors.AppError
+		var customError *appError.AppError
 
 		if errors.As(err, &customError) {
-			myErrors.LogError(customError, "logout failed")
+			appError.LogError(customError, "logout failed")
 
 			w.WriteHeader(customError.StatusCode)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{
@@ -126,7 +126,7 @@ func (controller *AuthControllerImpl) Logout(w http.ResponseWriter, r *http.Requ
 			})
 			return
 		} else {
-			myErrors.LogError(err, "unexpected error")
+			appError.LogError(err, "unexpected error")
 
 			w.WriteHeader(http.StatusInternalServerError)
 			helper.WriteToResponseBody(w, map[string]web.WebFailedResponse{

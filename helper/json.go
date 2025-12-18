@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
 )
 
@@ -14,7 +14,7 @@ func ReadFromRequestBody(r *http.Request, result interface{}) error {
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(result)
 	if err != nil {
-		myErrors.LogError(err, "error when reading request body")
+		appError.LogError(err, "error when reading request body")
 		return err
 	}
 
@@ -27,7 +27,7 @@ func WriteToResponseBody(w http.ResponseWriter, response interface{}) {
 
 	encoder := json.NewEncoder(w)
 	if err := encoder.Encode(response); err != nil {
-		myErrors.LogError(err, "error when writing response body")
+		appError.LogError(err, "error when writing response body")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
