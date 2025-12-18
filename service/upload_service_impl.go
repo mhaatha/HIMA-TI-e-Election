@@ -13,7 +13,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgxpool"
 	envConfig "github.com/mhaatha/HIMA-TI-e-Election/config"
-	myErrors "github.com/mhaatha/HIMA-TI-e-Election/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/model/web"
 	"github.com/mhaatha/HIMA-TI-e-Election/repository"
 )
@@ -41,11 +41,11 @@ func (service *UploadServiceImpl) CreatePresignedURL(ctx context.Context, fileNa
 		config.WithRegion("auto"),
 	)
 	if err != nil {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrLoadDefaultConfig, err),
+			fmt.Errorf("%w: %v", appError.ErrLoadDefaultConfig, err),
 		)
 	}
 
@@ -63,11 +63,11 @@ func (service *UploadServiceImpl) CreatePresignedURL(ctx context.Context, fileNa
 		Key:    aws.String(fileName),
 	}, s3.WithPresignExpires(5*time.Minute))
 	if err != nil {
-		return web.PresignedURLResponse{}, myErrors.NewAppError(
+		return web.PresignedURLResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", myErrors.ErrCreatePresignedPut, err),
+			fmt.Errorf("%w: %v", appError.ErrCreatePresignedPut, err),
 		)
 	}
 
