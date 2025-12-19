@@ -6,18 +6,22 @@ import (
 	"os"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/mhaatha/HIMA-TI-e-Election/config"
-	"github.com/mhaatha/HIMA-TI-e-Election/controller"
-	"github.com/mhaatha/HIMA-TI-e-Election/database"
-	appError "github.com/mhaatha/HIMA-TI-e-Election/errors"
-	"github.com/mhaatha/HIMA-TI-e-Election/middleware"
-	"github.com/mhaatha/HIMA-TI-e-Election/repository"
-	"github.com/mhaatha/HIMA-TI-e-Election/service"
+	"github.com/mhaatha/HIMA-TI-e-Election/internal/config"
+	"github.com/mhaatha/HIMA-TI-e-Election/internal/controller"
+	"github.com/mhaatha/HIMA-TI-e-Election/internal/database"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/internal/errors"
+	"github.com/mhaatha/HIMA-TI-e-Election/internal/middleware"
+	"github.com/mhaatha/HIMA-TI-e-Election/internal/repository"
+	"github.com/mhaatha/HIMA-TI-e-Election/internal/service"
 )
 
 func main() {
 	// Set TimeZone
 	os.Setenv("TZ", "Asia/Makassar")
+
+	// Logger Init
+	config.InitLogger()
+	defer config.CloseLogger()
 
 	// Validator Init
 	config.ValidatorInit()
@@ -26,50 +30,48 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		appError.LogError(err, "failed to load config")
+		os.Exit(1)
 	}
-
-	// Logger Init
-	config.InitLogger()
-	defer config.CloseLogger()
 
 	// DB Init
-	err = database.ConnectDB(cfg)
+	db, err := database.ConnectDB(cfg)
 	if err != nil {
-		appError.LogError(err, "unable to connect to database")
+		appError.LogError(err, "failed to initialize database")
+		os.Exit(1)
 	}
-	defer database.DB.Close()
+	defer db.Close()
 
 	// User Routes
 	userRepository := repository.NewUserRepository()
 	votingAccessRepository := repository.NewVotingAccessRepository()
-	userService := service.NewUserService(userRepository, votingAccessRepository, cfg, database.DB, config.Validate)
+	userService := service.NewUserService(userRepository, votingAccessRepository, cfg, db, config.Validate)
 	userController := controller.NewUserController(userService)
 
 	// Auth Routes
 	authRepository := repository.NewAuthRepository()
-	authService := service.NewAuthService(authRepository, userService, database.DB, config.Validate)
+	authService := service.NewAuthService(authRepository, userService, db, config.Validate)
 	authController := controller.NewAuthController(authService)
 
 	// Upload Routes
 	uploadRepository := repository.NewUploadRepository()
-	uploadService := service.NewUploadService(uploadRepository, cfg, database.DB, config.Validate)
+	uploadService := service.NewUploadService(uploadRepository, cfg, db, config.Validate)
 	uploadController := controller.NewUploadController(uploadService)
 
 	// Download Routes
 	downloadRepository := repository.NewDownloadRepository()
-	downloadService := service.NewDownloadService(downloadRepository, cfg, database.DB, config.Validate)
+	downloadService := service.NewDownloadService(downloadRepository, cfg, db, config.Validate)
 	downloadController := controller.NewDownloadController(downloadService)
 
 	// Log Routes
 
 	// Vote Routes
 	voteRepository := repository.NewVoteRepository()
-	voteService := service.NewVoteService(voteRepository, votingAccessRepository, authRepository, userService, database.DB, config.Validate)
-	voteController := controller.NewVoteController(voteService, database.DB)
+	voteService := service.NewVoteService(voteRepository, votingAccessRepository, authRepository, userService, db, config.Validate)
+	voteController := controller.NewVoteController(voteService, db)
 
 	// Candidate Routes
 	candidateRepository := repository.NewCandidateRepository()
-	candidateService := service.NewCandidateService(candidateRepository, cfg, voteService, database.DB, config.Validate)
+	candidateService := service.NewCandidateService(candidateRepository, cfg, voteService, db, config.Validate)
 
 	// Inject candidateService to voteService to solve Circular Dependency
 	voteService.SetCandidateService(candidateService)
