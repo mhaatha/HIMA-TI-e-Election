@@ -1,1 +1,0 @@
-Create a 'vote.log' file in this directory
