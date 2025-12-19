@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/mhaatha/HIMA-TI-e-Election/internal/errors"
+	appError "github.com/mhaatha/HIMA-TI-e-Election/internal/errors"
 	"github.com/mhaatha/HIMA-TI-e-Election/internal/helper"
 	"github.com/mhaatha/HIMA-TI-e-Election/internal/model/domain"
 	"github.com/mhaatha/HIMA-TI-e-Election/internal/model/web"
@@ -35,22 +35,22 @@ func (service *AuthServiceImpl) LoginUser(ctx context.Context, maxAge int, reque
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			errors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", errors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", errors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.RollbackQuietly(tx)
@@ -58,7 +58,7 @@ func (service *AuthServiceImpl) LoginUser(ctx context.Context, maxAge int, reque
 	// Get user by NIM to check password
 	user, err := service.UserService.GetByNIM(ctx, request.NIM)
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusUnauthorized,
 			"Invalid credentials",
 			"The NIM or password is incorrect",
@@ -68,11 +68,11 @@ func (service *AuthServiceImpl) LoginUser(ctx context.Context, maxAge int, reque
 
 	// Validate NIM and password
 	if !helper.CheckPasswordHash(user.Password, request.Password) {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusUnauthorized,
 			"Invalid credentials",
 			"The NIM or password is incorrect",
-			fmt.Errorf("%w", errors.ErrInvalidCredentials),
+			fmt.Errorf("%w", appError.ErrInvalidCredentials),
 		)
 	}
 
@@ -83,7 +83,7 @@ func (service *AuthServiceImpl) LoginUser(ctx context.Context, maxAge int, reque
 		MaxAgeSeconds: maxAge,
 	})
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -93,7 +93,7 @@ func (service *AuthServiceImpl) LoginUser(ctx context.Context, maxAge int, reque
 
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -120,22 +120,22 @@ func (service *AuthServiceImpl) LoginAdmin(ctx context.Context, maxAge int, requ
 	// Validate request
 	err := service.Validate.Struct(request)
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusBadRequest,
 			"Invalid request payload",
-			errors.FormatValidationDetails(err.(validator.ValidationErrors)),
-			fmt.Errorf("%w: %v", errors.ErrValidation, err),
+			appError.FormatValidationDetails(err.(validator.ValidationErrors)),
+			fmt.Errorf("%w: %v", appError.ErrValidation, err),
 		)
 	}
 
 	// Open Transaction
 	tx, err := service.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", errors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.RollbackQuietly(tx)
@@ -143,7 +143,7 @@ func (service *AuthServiceImpl) LoginAdmin(ctx context.Context, maxAge int, requ
 	// Check if any password matches
 	admins, err := service.UserService.GetAdmins(ctx)
 	if err != nil {
-		return web.LoginResponse{}, "", errors.NewAppError(
+		return web.LoginResponse{}, "", appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -160,7 +160,7 @@ func (service *AuthServiceImpl) LoginAdmin(ctx context.Context, maxAge int, requ
 				MaxAgeSeconds: maxAge,
 			})
 			if err != nil {
-				return web.LoginResponse{}, "", errors.NewAppError(
+				return web.LoginResponse{}, "", appError.NewAppError(
 					http.StatusInternalServerError,
 					"Internal Server Error",
 					"Failed to process your request due to an unexpected error. Please try again later.",
@@ -170,7 +170,7 @@ func (service *AuthServiceImpl) LoginAdmin(ctx context.Context, maxAge int, requ
 
 			// Commit transaction
 			if err = tx.Commit(); err != nil {
-				return web.LoginResponse{}, "", errors.NewAppError(
+				return web.LoginResponse{}, "", appError.NewAppError(
 					http.StatusInternalServerError,
 					"Internal Server Error",
 					"Failed to process your request due to an unexpected error. Please try again later.",
@@ -194,11 +194,11 @@ func (service *AuthServiceImpl) LoginAdmin(ctx context.Context, maxAge int, requ
 		}
 	}
 
-	return web.LoginResponse{}, "", errors.NewAppError(
+	return web.LoginResponse{}, "", appError.NewAppError(
 		http.StatusUnauthorized,
 		"Invalid credentials",
 		"Invalid NIM or password",
-		fmt.Errorf("invalid credensials: %w", errors.ErrInvalidCredentials),
+		fmt.Errorf("invalid credensials: %w", appError.ErrInvalidCredentials),
 	)
 }
 
@@ -206,11 +206,11 @@ func (service *AuthServiceImpl) Logout(ctx context.Context, sessionId string) er
 	// Open Transaction
 	tx, err := service.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", errors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.RollbackQuietly(tx)
@@ -218,7 +218,7 @@ func (service *AuthServiceImpl) Logout(ctx context.Context, sessionId string) er
 	// Delete session
 	err = service.AuthRepository.Delete(ctx, tx, sessionId)
 	if err != nil {
-		return errors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -228,7 +228,7 @@ func (service *AuthServiceImpl) Logout(ctx context.Context, sessionId string) er
 
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
-		return errors.NewAppError(
+		return appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -243,11 +243,11 @@ func (service *AuthServiceImpl) UserValidateSession(ctx context.Context, session
 	// Open Transaction
 	tx, err := service.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", errors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.RollbackQuietly(tx)
@@ -255,27 +255,27 @@ func (service *AuthServiceImpl) UserValidateSession(ctx context.Context, session
 	// Get session
 	session, err := service.AuthRepository.GetSessionById(ctx, tx, sessionId)
 	if err != nil {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusUnauthorized,
 			"Invalid session data",
 			"Session data may be corrupted, missing or expired",
-			fmt.Errorf("%w: session with id '%v' is not found", errors.ErrSessionNotFound, sessionId),
+			fmt.Errorf("%w: session with id '%v' is not found", appError.ErrSessionNotFound, sessionId),
 		)
 	}
 
 	// Validate session
 	if session.CreatedAt.Add(time.Second * time.Duration(session.MaxAgeSeconds)).Before(time.Now()) {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusUnauthorized,
 			"Invalid session data",
 			"Session data may be corrupted, missing or expired",
-			fmt.Errorf("%w: session with id '%v' is expired", errors.ErrSessionExpired, sessionId),
+			fmt.Errorf("%w: session with id '%v' is expired", appError.ErrSessionExpired, sessionId),
 		)
 	}
 
 	// Commit transaction
 	if err = tx.Commit(); err != nil {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
@@ -290,11 +290,11 @@ func (service *AuthServiceImpl) AdminValidateSession(ctx context.Context, sessio
 	// Open Transaction
 	tx, err := service.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to process your request due to an unexpected error. Please try again later.",
-			fmt.Errorf("%w: %v", errors.ErrTransaction, err),
+			fmt.Errorf("%w: %v", appError.ErrTransaction, err),
 		)
 	}
 	defer helper.RollbackQuietly(tx)
@@ -302,11 +302,11 @@ func (service *AuthServiceImpl) AdminValidateSession(ctx context.Context, sessio
 	// Get session
 	session, err := service.AuthRepository.GetSessionById(ctx, tx, sessionId)
 	if err != nil {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusUnauthorized,
 			"Invalid session data",
 			"Session data may be corrupted, missing or expired",
-			fmt.Errorf("%w: session with id '%v' is not found", errors.ErrSessionNotFound, sessionId),
+			fmt.Errorf("%w: session with id '%v' is not found", appError.ErrSessionNotFound, sessionId),
 		)
 	}
 
@@ -314,27 +314,27 @@ func (service *AuthServiceImpl) AdminValidateSession(ctx context.Context, sessio
 	user, _ := service.UserService.GetCurrent(ctx, sessionId)
 
 	if user.Role != "admin" {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusForbidden,
 			"Forbidden access",
 			"You do not have permission to access this resource",
-			fmt.Errorf("%w: user with id '%v' is not an admin", errors.ErrForbiddenAccess, user.ID),
+			fmt.Errorf("%w: user with id '%v' is not an admin", appError.ErrForbiddenAccess, user.ID),
 		)
 	}
 
 	// Validate session
 	if session.CreatedAt.Add(time.Second * time.Duration(session.MaxAgeSeconds)).Before(time.Now()) {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusUnauthorized,
 			"Invalid session data",
 			"Session data may be corrupted, missing or expired",
-			fmt.Errorf("%w: session with id '%v' is expired", errors.ErrSessionExpired, sessionId),
+			fmt.Errorf("%w: session with id '%v' is expired", appError.ErrSessionExpired, sessionId),
 		)
 	}
 
 	// Commit transcation
 	if err = tx.Commit(); err != nil {
-		return web.SessionResponse{}, errors.NewAppError(
+		return web.SessionResponse{}, appError.NewAppError(
 			http.StatusInternalServerError,
 			"Internal Server Error",
 			"Failed to commit transaction",
